@@ -11,35 +11,58 @@ const Header = () => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
       
-      const sections = ['hero', 'problem', 'solution', 'gamification', 'how-it-works', 'partners', 'team', 'contact'];
-      const current = sections.find(section => {
-        const element = document.getElementById(section);
+      const sections = ['hero', 'problem', 'solution', 'gamification', 'how-it-works', 'partners', 'team'];
+      const headerHeight = 100;
+      
+      // Find the current section based on scroll position
+      let current = 'hero';
+      
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const element = document.getElementById(sections[i]);
         if (element) {
           const rect = element.getBoundingClientRect();
-          return rect.top <= 100 && rect.bottom >= 100;
+          if (rect.top <= headerHeight) {
+            current = sections[i];
+            break;
+          }
         }
-        return false;
-      });
-      if (current) setActiveSection(current);
+      }
+      
+      setActiveSection(current);
     };
 
-    window.addEventListener('scroll', handleScroll);
+    // Initial check
+    handleScroll();
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
-    if (element) {
+    if (!element) {
+      console.warn(`Section with id "${id}" not found`);
+      setIsMobileMenuOpen(false);
+      return;
+    }
+
+    // Close mobile menu first
+    setIsMobileMenuOpen(false);
+    
+    // Set active section immediately for better UX
+    setActiveSection(id);
+    
+    // Small delay to ensure menu closes before scrolling
+    setTimeout(() => {
       const headerHeight = 80; // Header height offset
       const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPosition = elementPosition - headerHeight;
+      const offsetPosition = Math.max(0, elementPosition - headerHeight);
 
       window.scrollTo({
         top: offsetPosition,
         behavior: 'smooth'
       });
-    }
-    setIsMobileMenuOpen(false);
+    }, 150);
   };
 
   const navLinks = [
@@ -49,6 +72,7 @@ const Header = () => {
     { name: 'Gamification', id: 'gamification' },
     { name: 'How It Works', id: 'how-it-works' },
     { name: 'Partners', id: 'partners' },
+    { name: 'Team', id: 'team' },
   ];
 
   return (
@@ -88,41 +112,46 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-1">
-            {navLinks.map((link) => (
-              <motion.button
-                key={link.id}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToSection(link.id);
-                }}
-                className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-lg cursor-pointer ${
-                  activeSection === link.id
-                    ? 'text-blue-600'
-                    : 'text-gray-700 hover:text-blue-600'
-                }`}
-              >
-                {link.name}
-                {/* Active Indicator */}
-                {activeSection === link.id && (
-                  <motion.div
-                    layoutId="activeIndicator"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full"
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  />
-                )}
-                {/* Hover Underline */}
-                {activeSection !== link.id && (
-                  <motion.div
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full"
-                    initial={{ scaleX: 0 }}
-                    whileHover={{ scaleX: 1 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                )}
-              </motion.button>
-            ))}
+              {navLinks.map((link) => {
+                const isActive = activeSection === link.id;
+                return (
+                  <motion.button
+                    key={link.id}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      scrollToSection(link.id);
+                    }}
+                    className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-lg cursor-pointer ${
+                      isActive
+                        ? 'text-blue-600'
+                        : 'text-gray-700 hover:text-blue-600'
+                    }`}
+                  >
+                    {link.name}
+                    {/* Active Indicator */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeIndicator"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full"
+                        initial={false}
+                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    {/* Hover Underline - only show when not active */}
+                    {!isActive && (
+                      <motion.div
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full origin-left"
+                        initial={{ scaleX: 0 }}
+                        whileHover={{ scaleX: 1 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    )}
+                  </motion.button>
+                );
+              })}
           </div>
 
           {/* Mobile Menu Button */}
@@ -154,41 +183,44 @@ const Header = () => {
             className="lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-xl"
           >
             <div className="container mx-auto px-4 py-4 space-y-1">
-              {navLinks.map((link, index) => (
-                <motion.button
-                  key={link.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    scrollToSection(link.id);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
-                    activeSection === link.id
-                      ? 'bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-600 border-l-4 border-blue-600'
-                      : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
-                  }`}
-                >
-                  {link.name}
-                </motion.button>
-              ))}
-              {/* Mobile CTA Button */}
-              <motion.button
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: navLinks.length * 0.05 }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToSection('contact');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="w-full mt-4 flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <span>Try Demo</span>
-                <ArrowRight className="w-4 h-4" />
-              </motion.button>
+              {navLinks.map((link, index) => {
+                const isActive = activeSection === link.id;
+                return (
+                  <motion.button
+                    key={link.id}
+                    type="button"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // Force scroll immediately
+                      const element = document.getElementById(link.id);
+                      if (element) {
+                        setActiveSection(link.id);
+                        setIsMobileMenuOpen(false);
+                        setTimeout(() => {
+                          const headerHeight = 80;
+                          const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                          const offsetPosition = Math.max(0, elementPosition - headerHeight);
+                          window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                          });
+                        }, 200);
+                      }
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer ${
+                      isActive
+                        ? 'bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-600 border-l-4 border-blue-600'
+                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                    }`}
+                  >
+                    {link.name}
+                  </motion.button>
+                );
+              })}
             </div>
           </motion.div>
         )}

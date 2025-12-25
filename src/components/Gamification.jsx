@@ -74,7 +74,7 @@ const NeonsGamification = () => {
   ];
 
   return (
-    <section className="relative py-20 lg:py-28 overflow-hidden">
+    <section id="gamification" className="relative py-20 lg:py-28 overflow-hidden">
       {/* Animated Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-100">
         {/* Animated orbs */}

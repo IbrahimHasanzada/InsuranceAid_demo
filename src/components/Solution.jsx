@@ -98,7 +98,7 @@ const NeonsSolution = () => {
                 style={{ transformOrigin: 'left' }}
               ></motion.span>
             </span>
-            {' '}Works
+            {' '}Solve this Problem
           </h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
